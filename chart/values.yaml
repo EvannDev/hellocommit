@@ -1,0 +1,143 @@
+replicaCount: 1
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ── API (Go / Fiber) ──────────────────────────────────────────────────────────
+api:
+  image:
+    repository: hellocommit-api
+    pullPolicy: IfNotPresent
+    # Overrides the image tag; defaults to chart appVersion
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # Sensitive values — stored in a Kubernetes Secret
+  env:
+    githubToken: ""
+    dbPath: "/data/hellocommit.db"
+
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 8080
+    initialDelaySeconds: 3
+    periodSeconds: 5
+
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 256Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # Persistent volume for the SQLite database
+  persistence:
+    enabled: false
+    storageClass: ""
+    size: 1Gi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+
+# ── Frontend (Next.js) ────────────────────────────────────────────────────────
+frontend:
+  image:
+    repository: hellocommit-frontend
+    pullPolicy: IfNotPresent
+    # Overrides the image tag; defaults to chart appVersion
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # Sensitive values — stored in a Kubernetes Secret
+  env:
+    authSecret: ""
+    githubClientId: ""
+    githubClientSecret: ""
+    # NEXT_PUBLIC_API_URL is baked in at build time in Next.js.
+    # Set this to the externally reachable API URL for client-side fetches.
+    apiUrl: "http://localhost:8080/api"
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: hellocommit.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+      # - secretName: hellocommit-tls
+      #   hosts:
+      #     - hellocommit.local
+
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+    hostnames:
+      - hellocommit.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 512Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 256Mi

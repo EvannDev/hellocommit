@@ -1,0 +1,32 @@
+HelloCommit has been deployed!
+
+Services:
+  API (Go/Fiber):  {{ include "hellocommit.api.fullname" . }}:{{ .Values.api.service.port }}
+  Frontend (Next): {{ include "hellocommit.frontend.fullname" . }}:{{ .Values.frontend.service.port }}
+
+{{- if .Values.frontend.ingress.enabled }}
+Frontend URL:
+{{- range .Values.frontend.ingress.hosts }}
+  http{{ if $.Values.frontend.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else if .Values.frontend.httpRoute.enabled }}
+Frontend URL:
+{{- range .Values.frontend.httpRoute.hostnames }}
+  http://{{ . }}
+{{- end }}
+{{- else }}
+Access the frontend locally with port-forward:
+  kubectl port-forward svc/{{ include "hellocommit.frontend.fullname" . }} 3000:{{ .Values.frontend.service.port }}
+  open http://localhost:3000
+
+Access the API locally with port-forward:
+  kubectl port-forward svc/{{ include "hellocommit.api.fullname" . }} 8080:{{ .Values.api.service.port }}
+  curl http://localhost:8080/api/health
+{{- end }}
+
+{{- if not .Values.api.persistence.enabled }}
+
+WARNING: SQLite persistence is disabled (api.persistence.enabled=false).
+The database will be lost on pod restarts. Enable persistence for production:
+  helm upgrade ... --set api.persistence.enabled=true
+{{- end }}

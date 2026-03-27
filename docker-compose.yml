@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  api:
+    image: hellocommit-api
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - PORT=8080
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  frontend:
+    image: hellocommit-frontend
+    build: ./ui
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_GITHUB_ID=${AUTH_GITHUB_ID}
+      - AUTH_GITHUB_SECRET=${AUTH_GITHUB_SECRET}
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+    depends_on:
+      - api
+    restart: unless-stopped

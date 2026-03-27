@@ -1,0 +1,11 @@
+hellocommit.db
+.env
+.env.local
+.env.*.local
+
+node_modules/
+.turbo/
+bin/
+
+# Local Helm overrides (contain real secrets)
+chart/values.local.yaml
